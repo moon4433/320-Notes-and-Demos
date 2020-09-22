@@ -15,6 +15,7 @@ public class ConnectToServer : MonoBehaviour
     public ushort port = 320; // 0 - 65535 for ushort
 
     public TextMeshProUGUI chatDisplay;
+    public TextMeshProUGUI nameDisplay;
     public TMP_InputField inputDisplay;
 
     TcpClient socketToServer = new TcpClient();
@@ -100,15 +101,15 @@ public class ConnectToServer : MonoBehaviour
                 break;
             case "LIST":
 
-                string users = "Users on server: ";
+                string users = "";
 
                 for (int i = 1; i < parts.Length; i++)
                 {
-                    if(i >  1) users += ", ";
+                    if(i >  1) users += "  ";
                     users += parts[i];
                 }
 
-                AddMessageToChatDisplay(users);
+                AddUsersToNameDisplay(users);
 
                 break;
         }
@@ -119,6 +120,10 @@ public class ConnectToServer : MonoBehaviour
         chatDisplay.text += $"{txt}\n";
     }
 
+    public void AddUsersToNameDisplay(string names)
+    {
+        nameDisplay.text += $"{names}\n";
+    }
     public void UserDoneEditingMessage(string txt)
     {
         if(new Regex(@"^\\name ", RegexOptions.IgnoreCase).IsMatch(txt))
