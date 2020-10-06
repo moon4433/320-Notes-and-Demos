@@ -1,13 +1,15 @@
 
 
+const PacketBuilder = require("./packet-builder.js").PacketBuilder;
+
 exports.Client = class Client { 
 
 	constructor(sock, server){
 		this.socket = sock;
 		this.server = server;
-		this.username = Buffer.alloc(0);
+		this.username = "";
 
-		this.buffer = "";
+		this.buffer = Buffer.alloc(0);
 
 		this.socket.on("error",(e)=>{this.onError(e)});
 		this.socket.on("close",()=>{this.onClose()});
@@ -21,6 +23,8 @@ exports.Client = class Client {
 		this.server.onClientDisconnect(this);
 	}
 	onData(data){
+
+		//console.log("packet received: " + data);
 
 		// add new data to buffer:
 		this.buffer = Buffer.concat([this.buffer, data]);
@@ -40,21 +44,47 @@ exports.Client = class Client {
 				if(this.buffer.length < 5 + lengthOfUsername) return; // not enough data to process
 				const desiredUsername = this.buffer.slice(5, 5+lengthOfUsername).toString();
 
-				// check username!
+				// check username...
+				let responseType = this.server.generateResponseID(desiredUsername, this);
+
+
+				// consume data out of the buffer:
+				this.buffer = this.buffer.slice(5 + lengthOfUsername);
+
 				console.log("user wants to change name: "+desiredUsername+" ");
+
+				// build and send packet
+				const packet = PacketBuilder.join(responseType);
+				this.sendPacket(packet);
+
+				const packet2 = PacketBuilder.update(this.server.game);
+				this.sendPacket(packet2);
 
 				break;
 			case "CHAT": break;
-			case "PLAY": break;
+			case "PLAY": 
+				if(this.buffer.length < 6) return; // not enough data in buffer....
+				const x = this.buffer.readUInt8(4);
+				const y = this.buffer.readUInt8(5);
+
+				console.log("User wants to play at: "+x+" "+y);
+
+				this.buffer = this.buffer.slice(6);
+				this.server.game.playMove(this, x, y);
+
+				break;
 			default:
 				//don't recognize the packet..... :(
-				console.log("ERROR: packett identifier NOT recognized ("+packetIdentifier+")");
+				console.log("ERROR: packet identifier NOT recognized ("+packetIdentifier+")");
 				this.buffer = Buffer.alloc(0); // empty the buffer
 				break;
 		}
 
 		// process packets (and consume data from buffer)
 
+	}
+	sendPacket(packet){
+		this.socket.write(packet);
 	}
 
 };
