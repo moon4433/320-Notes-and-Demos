@@ -109,7 +109,7 @@ public class ConnectToServer : MonoBehaviour
                     users += parts[i];
                 }
 
-                AddUsersToNameDisplay(users);
+                AddMessageToChatDisplay(users);
 
                 break;
         }
