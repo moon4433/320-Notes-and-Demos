@@ -1,5 +1,4 @@
 
-
 class Server {
 	constructor(){
 
@@ -9,21 +8,20 @@ class Server {
 		// setup event-listeners:
 		this.sock.on("error", (e)=>this.onError(e));
 		this.sock.on("listening", ()=>this.onStartListen());
-		this.sock.on("message", (msg, rinfo)=>this.onPacket(msg, rinfo));
+		this.sock.on("message", (msg,rinfo)=>this.onPacket(msg,rinfo));
 
 		// start listening:
 		this.port = 320;
 		this.sock.bind(this.port);
-
 	}
 	onError(e){
-		console.log("Error: " + e);
+		console.log("ERROR: "+e);
 	}
 	onStartListen(){
-		console.log("Server is listening on port " + this.port);
+		console.log("Server is listening on port "+this.port);
 	}
 	onPacket(msg, rinfo){
-		console.log("message recieved from "+rinfo.address+" : "+rinfo.port);
+		console.log("message received from "+rinfo.address+" : "+rinfo.port);
 	}
 }
 
