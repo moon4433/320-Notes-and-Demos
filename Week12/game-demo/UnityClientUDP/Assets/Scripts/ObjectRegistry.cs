@@ -19,11 +19,11 @@ public class ObjectRegistry : MonoBehaviour
 
     //static private Dictionary<string, Type> registeredTypes = new Dictionary<string, Type>();
 
-    static private ObjectRegistry _singleton;
-
     static private Dictionary<string, NetworkObject> registeredPrefabs = new Dictionary<string, NetworkObject>();
 
     public RegisteredPrefab[] prefabs;
+
+    static private ObjectRegistry _singleton;
 
     private void Start()
     {
@@ -50,11 +50,11 @@ public class ObjectRegistry : MonoBehaviour
             }
         }
     }
-    static public void RegisterClass<T>() where T : NetworkObject
-    {
-        //string classID = (string) typeof(T).GetField("classID").GetValue(null);
-        //registeredTypes.Add(classID, typeof(T));
-    }
+    // static public void RegisterClass<T>() where T : NetworkObject
+    // {
+    //     //string classID = (string) typeof(T).GetField("classID").GetValue(null);
+    //     //registeredTypes.Add(classID, typeof(T));
+    // }
 
     static public NetworkObject SpawnFrom(string classID)
     {

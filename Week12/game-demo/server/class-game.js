@@ -1,86 +1,76 @@
-
 const Pawn = require("./class-pawn.js").Pawn;
 
 exports.Game = class Game {
-	constructor(server){
+    constructor(server){
+        this.frame = 0;
+        this.time = 0;
+        this.dt = 16/1000;
+        this.timeUntilNextStatePacket = 0;
 
-		this.frame = 0;
-		this.time = 0;
-		this.dt = 16/1000;
+        this.objs = [];
 
-		this.timeUntilNextStatePacket = 0;
+        this.server = server;
+        this.update();
 
-		this.objs = []; // store NetworkObjects in here
+        this.spawnObject(new Pawn());
+    }
+    update(){
+        this.time += this.dt;
+        this.frame++;
 
-		this.server = server;
-		this.update();
+        const player = this.server.getPlayer(0);
 
-		this.spawnObject( new Pawn() );
+        for(var i in this.objs){
+            this.objs[i].update(this);
+        }
 
-	}
-	update(){
+        if(player){
+        
+        }
 
-		this.time += this.dt;
-		this.frame++;
-		const player = this.server.getPlayer(0); // return nth client
+        if (this.timeUntilNextStatePacket > 0)
+        {
+            this.timeUntilNextStatePacket -= this.dt;
+        }
+        else
+        {
+            this.timeUntilNextStatePacket = .1;
+            this.sendWorldState();
+        }
+
+        this.sendWorldState();
+
+        setTimeout(()=> this.update(), 16); // wait 16ms and call update again.
+    }
+    sendWorldState(){
+        const packet = this.makeREPL(true);
+        this.server.sendPacketToAll(packet);
+    }
+    makeREPL(isUpdate){
+        isUpdate = !!isUpdate; // force into a boolean
+        let packet = Buffer.alloc(5);
+        packet.write("REPL", 0);
+        packet.writeUInt8(isUpdate ? 2 : 1, 4);
 
 
+        this.objs.forEach(o=>{
+            const classID = Buffer.from(o.classID);
+            const data = o.serialize();
+            packet = Buffer.concat([packet, classID, data]);
+        });
 
-		for(var i in this.objects){
-			this.objs[i].update(this);
-		}
+        return packet;
+    }
+    spawnObject(obj){
+        this.objs.push(obj);
 
-		if(player){
-			
-		}
+        let packet = Buffer.alloc(5);
+        packet.write("REPL", 0);
+        packet.writeUInt8(1, 4);
 
-		if(this.timeUntilNextStatePacket > 0){
-			// count down
-			this.timeUntilNextStatePacket -= this.dt;
-		} else {
-			this.timeUntilNextStatePacket = .1; // send 10% packets (~ 1/6 frames)
-			this.sendWorldState();
-		}
-
-		setTimeout(()=>this.update(), 16);
-	}
-	sendWorldState(){
-		
-		const packet = this.makeREPL(true);
-		this.server.sendPacketToAll(packet);
-	}
-	makeREPL(isUpdate){
-
-		isUpdate = !!isUpdate;
-
-		let packet = Buffer.alloc(5);
-		packet.write("REPL", 0);
-		packet.writeUInt8( isUpdate ? 2 : 1, 4);
-
-		this.objs.forEach(o=>{
-
-			const classID = Buffer.from(o.classID);
-			const data = o.serialize();
-
-			packet = Buffer.concat([packet, classID, data]);
-		});
-
-		return packet;
-	}
-	spawnObject(obj){
-		this.objs.push(obj);
-
-		let packet = Buffer.alloc(5);
-		packet.write("REPL", 0);
-		packet.writeUInt8(1, 4);
-
-		const classID = Buffer.from(obj.classID);
-		const data = obj.serialize();
-
-		packet = Buffer.concat([packet, classID, data]);
-
-		this.server.sendPacketToAll(packet);
-	}
+        const classID = Buffer.from(obj.classID);
+        const data = obj.serialize();
+        packet = Buffer.concat([packet, classID, data]);
+        this.server.sendPacketToAll(packet);
+    }
 }
-
-

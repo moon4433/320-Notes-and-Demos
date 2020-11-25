@@ -1,53 +1,37 @@
+exports.NetworkObject = class NetworkObject{
+    static _idCount = 0;
+    constructor(){
+        this.classID = "NWOB";
+        this.networkID = ++NetworkObject._idCount;
 
+        this.position = {x:0,y:0,z:0};
+        this.rotation = {x:0,y:0,z:0};
+        this.scale    = {x:1,y:1,z:1};
+    }
+    update(game){
+        this.position.x = Math.sin(game.time);
+    }
+    serialize(){
+        const buffer = Buffer.alloc(37);
 
-// this is any object that can be sent over the network...
+        buffer.writeUInt8(this.networkID, 0);
+        buffer.writeFloatBE(this.position.x, 1);
+        buffer.writeFloatBE(this.position.y, 5);
+        buffer.writeFloatBE(this.position.z, 9);
 
-exports.NetworkObject = class NetworkObject {
+        buffer.writeFloatBE(this.rotation.x, 13);
+        buffer.writeFloatBE(this.rotation.y, 17);
+        buffer.writeFloatBE(this.rotation.z, 21);
 
-	static _idCount = 0; // pls dont use
+        buffer.writeFloatBE(this.scale.x, 25);
+        buffer.writeFloatBE(this.scale.y, 29);
+        buffer.writeFloatBE(this.scale.z, 33);
 
-	constructor(){
-
-		this.classID = "NWOB";
-		this.networkID = ++NetworkObject._idCount;
-
-		this.position = {x:0,y:0,z:0};
-		this.rotation = {x:0,y:0,z:0};
-		this.scale 	  = {x:1,y:1,z:1};
-
-	}
-	update(game){
-
-	}
-
-	serialize(){
-		const buffer = Buffer.alloc(37);
-		buffer.writeUInt8(this.networkID, 0)
-
-		buffer.writeFloatBE(this.position.x, 1);
-		buffer.writeFloatBE(this.position.x, 5);
-		buffer.writeFloatBE(this.position.x, 9);
-
-		buffer.writeFloatBE(this.rotation.x, 13);
-		buffer.writeFloatBE(this.rotation.x, 17);
-		buffer.writeFloatBE(this.rotation.x, 21);
-
-		buffer.writeFloatBE(this.scale.x, 25);
-		buffer.writeFloatBE(this.scale.x, 29);
-		buffer.writeFloatBE(this.scale.x, 33);
-
-		return buffer;
-
-	}
-	deserialize(buffer){
-		// this.position.x = buffer.readFloatBE(0);
-		// this.position.y = buffer.readFloatBE(0);
-		// this.position.z = buffer.readFloatBE(0);
-
-		// pointless??
-	}
-
-
+        return buffer;
+    }
+    deserialize(buffer){
+        //buffer.position.x = buffer.readFloatBE(0);
+        //buffer.position.y = buffer.readFloatBE(0);
+        //buffer.position.z = buffer.readFloatBE(0);
+    }
 }
-
-
