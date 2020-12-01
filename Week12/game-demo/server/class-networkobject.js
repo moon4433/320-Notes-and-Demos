@@ -9,7 +9,7 @@ exports.NetworkObject = class NetworkObject{
         this.scale    = {x:1,y:1,z:1};
     }
     update(game){
-        this.position.x = Math.sin(game.time);
+        
     }
     serialize(){
         const buffer = Buffer.alloc(37);

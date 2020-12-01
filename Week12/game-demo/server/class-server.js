@@ -1,5 +1,6 @@
 const Game = require("./class-game.js").Game;
 const Client = require("./class-client.js").Client;
+const Pawn = require("./class-pawn.js").Pawn;
 
 exports.Server = class Server {
     constructor(){
@@ -32,7 +33,7 @@ exports.Server = class Server {
         
         const c = this.lookupClient(rinfo);
         if(c){
-            c.onPacket(msg);
+            c.onPacket(msg, this.game);
         } else {
             if(packetID == "JOIN"){
                 this.makeClient(rinfo);
@@ -54,6 +55,10 @@ exports.Server = class Server {
     makeClient(rinfo){
         const key = this.getKeyFromRinfo(rinfo);
         const client = new Client(rinfo);
+
+        // depending on scene (and other conditions) spawn Pawn:
+        client.spawnPawn(this.game);
+
         this.clients[key] = client;
         this.showClientList();
 
@@ -61,6 +66,15 @@ exports.Server = class Server {
         this.sendPacketToClient(packet, client); // TODO: needs ACK!!
 
         return client;
+    }
+    disconnectClient(client){
+
+        if(client.pawn) this.game.removeObject(client.pawn);
+
+        const key = this.getKeyFromRinfo(client.rinfo);
+        delete this.clients[key];
+
+        this.showClientList();
     }
     showClientList(){
         console.log("====== "+Object.keys(this.clients).length+" clients connected ======");
@@ -83,5 +97,11 @@ exports.Server = class Server {
     }
     sendPacketToClient(packet, client){
         this.sock.send(packet, 0 , packet.length, client.rinfo.port, client.rinfo.address, ()=>{});
+    }
+    update(game){
+        // check clients for disconnects
+        for(let key in this.clients){
+            this.clients[key].update(game);
+        }
     }
 }
