@@ -86,6 +86,19 @@ public class ClientUDP : MonoBehaviour
             case "REPL":
                 ProcessPacketREPL(packet);
                 break;
+            case "PAWN":
+
+                if (packet.Length < 5) return; // do nothing
+
+                byte networkID = packet.ReadUInt8(4);
+                NetworkObject obj = NetworkObject.GetObjectByNetworkID(networkID);
+                if (obj != null)
+                {
+                    Pawn p = (Pawn) obj;
+                    if(p != null) p.canPlayerControl = true;
+                }
+
+                break;
         }
     }
 

@@ -31,3 +31,10 @@ REPL - Sent when creating/updating/deleting game object
 	
 	5	4	ascii		class ID e.g. "PLYR"
 	9	??	serialize	????
+
+PAWN - sent to client to indicate which pawn they control
+
+	O 	L	Datatype	Desc
+	================================
+	0	4	ascii		PAWN
+	4	1	uint8		NetworkID

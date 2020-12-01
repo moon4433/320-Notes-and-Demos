@@ -48,8 +48,7 @@ exports.Pawn = class Pawn extends NetworkObject{
 
     }
     serialize(){
-        const b = super.serialize();
-
+        let b = super.serialize();
         return b;
     }
     deserialize(){
