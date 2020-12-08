@@ -12,6 +12,7 @@ exports.Game = class Game {
         this.frame = 0;
         this.time = 0;
         this.dt = .016;
+        
         this.timeUntilNextStatePacket = 0;
 
         this.objs = [];

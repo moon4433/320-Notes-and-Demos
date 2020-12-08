@@ -15,10 +15,10 @@ public class ClientUDP : MonoBehaviour
         private set { _singleton = value; }
     }
 
-    UdpClient sock = new UdpClient();
+    static UdpClient sockSending;
+    static UdpClient sockReceive = new UdpClient(321);
 
-    public string ServerHOST = "127.0.0.1";
-    public ushort ServerPORT = 320;
+    public List<RemoteServer> availableGameServers = new List<RemoteServer>();
 
     /// <summary>
     /// Most recent ball update packet
@@ -36,37 +36,48 @@ public class ClientUDP : MonoBehaviour
             // already have a clientUDP...
             Destroy(gameObject);
 
-        } else {
+        } else
+        {
             singleton = this;
             DontDestroyOnLoad(gameObject);
 
-            IPEndPoint ep = new IPEndPoint(IPAddress.Parse(ServerHOST), ServerPORT);
-            sock = new UdpClient(ep.AddressFamily);
-            sock.Connect(ep);
-
-            // set up receive loop (async):
             ListenForPackets();
 
-            // send a packet to the server (async):
-            SendPacket(Buffer.From("JOIN"));
-
-            
         }
 
     }
+
+    public void ConnectToServer(string host, ushort port)
+    {
+        // TODO: don't do anything if connected....
+
+        IPEndPoint ep = new IPEndPoint(IPAddress.Parse(host), port);
+        sockSending = new UdpClient(ep.AddressFamily);
+        sockSending.Connect(ep);
+
+        // set up receive loop (async):
+        //ListenForPackets();
+
+        // send a packet to the server (async):
+        SendPacket(Buffer.From("JOIN"));
+    }
+
     /// <summary>
     /// This function listens for incoming UDP packets.
     /// </summary>
     async void ListenForPackets()
     {
+
+        
+
         while (true)
         {
             UdpReceiveResult res;
             try
             {
-                res = await sock.ReceiveAsync();
-                Buffer packet = Buffer.From(res.Buffer);
-                ProcessPacket(packet);
+                res = await sockReceive.ReceiveAsync();   
+
+                ProcessPacket(res);
             } catch {
                 break;
             }
@@ -76,8 +87,11 @@ public class ClientUDP : MonoBehaviour
     /// This function processes a packet and decides what to do next.
     /// </summary>
     /// <param name="packet">The packet to process</param>
-    private void ProcessPacket(Buffer packet)
+    private void ProcessPacket(UdpReceiveResult res)
     {
+
+        Buffer packet = Buffer.From(res.Buffer);
+
         if (packet.Length < 4) return; // do nothing
 
         string id = packet.ReadString(0, 4);
@@ -86,7 +100,7 @@ public class ClientUDP : MonoBehaviour
             case "REPL":
                 ProcessPacketREPL(packet);
                 break;
-            case "PAWN":
+            case "PAWN": // extra packet to identify WHICH object (NetworkID) the player controls
 
                 if (packet.Length < 5) return; // do nothing
 
@@ -99,9 +113,34 @@ public class ClientUDP : MonoBehaviour
                 }
 
                 break;
+            case "HOST":
+
+                if (packet.Length < 7) return; // do nothing
+
+                ushort port = packet.ReadUInt16BE(4);
+                int nameLength = packet.ReadUInt8(6);
+
+                if (packet.Length < 7 + nameLength) return; // do nothing....
+
+                string name = packet.ReadString(7, nameLength);
+
+                AddToServerList(new RemoteServer(res.RemoteEndPoint, name));
+
+                break;
         }
     }
+    private void AddToServerList(RemoteServer server)
+    {
 
+        // check if exists... 
+        if (!availableGameServers.Contains(server))
+        {
+
+            // add
+            availableGameServers.Add(server);
+        }
+        //print(availableGameServers.Count);
+    }
     private void ProcessPacketREPL(Buffer packet)
     {
         if (packet.Length < 5) return; // do nothing
@@ -182,17 +221,18 @@ public class ClientUDP : MonoBehaviour
     /// <param name="packet">The packet to send</param>
     async public void SendPacket(Buffer packet)
     {
-        if (sock == null) return;
-        if (!sock.Client.Connected) return;
+        if (sockSending == null) return;
+        if (!sockSending.Client.Connected) return;
 
         //remove literals from next line:
-        await sock.SendAsync(packet.bytes, packet.bytes.Length);
+        await sockSending.SendAsync(packet.bytes, packet.bytes.Length);
     }
     /// <summary>
     /// When destroying, clean up objects:
     /// </summary>
     private void OnDestroy()
     {
-        sock.Close();
+        if(sockSending != null) sockSending.Close();
+        if(sockReceive != null) sockReceive.Close();
     }
 }
